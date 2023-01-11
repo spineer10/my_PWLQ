@@ -32,6 +32,8 @@ class QuantAct(nn.Module):
         stats_size = (self.sample_batches, self.topk) if self.get_stats else 1
         self.register_buffer('minv', torch.zeros(stats_size))
         self.register_buffer('maxv', torch.zeros(stats_size))
+        self.register_buffer('quant_minv',torch.zeros(1))
+        self.register_buffer('quant_maxv',torch.zeros(1))
 
     def forward(self, x):
         if self.get_stats:                #get_states=1时表示位于激活层的采集模式
@@ -41,13 +43,15 @@ class QuantAct(nn.Module):
                 y, indices = y.sort()
                 topk_mins = y[:self.topk]       #最小的十个
                 topk_maxs = y[-self.topk:]      #最大的十个
-                if self.index < self.sample_batches:
-                    self.minv[self.index, :] = topk_mins
-                    self.maxv[self.index, :] = topk_maxs
-                    self.index += 1
-#                print('y:{}'.format(y))
-#                print('minv:{},maxv:{}'.format(self.minv,self.maxv))
-#                print('size:{}'.format(self.minv.size()))
+                self.minv[self.index, :] = topk_mins
+                self.maxv[self.index, :] = topk_maxs
+                self.quant_minv = self.minv[self.index,4]
+                self.quant_maxv = self.maxv[self.index,4]
+            else:
+                self.quant_minv = torch.min(self.minv)
+                self.quant_maxv = torch.max(self.maxv)
+                print("quant acts minv:{},maxv:{}".format(self.quant_minv,self.quant_maxv))
+            self.index += 1
         if self.act_bits > 0:
             # uniform quantization
             # if self.minv is not None:
@@ -59,7 +63,7 @@ class QuantAct(nn.Module):
             #         _minv = - self.maxv
             #         self.signed = True
              x = uniform_symmetric_quantizer(x, bits=self.act_bits,
-                     minv=-2, maxv=2, signed=True)
+                     minv=self.quant_minv, maxv=self.quant_maxv, signed=True)
         return x
 
 
