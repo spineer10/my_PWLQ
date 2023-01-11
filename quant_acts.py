@@ -35,15 +35,16 @@ class QuantAct(nn.Module):
 
     def forward(self, x):
         if self.get_stats:                #get_states=1时表示位于激活层的采集模式
-            y = x.clone()
-            y = torch.reshape(y, (-1,))     #s
-            y, indices = y.sort()
-            topk_mins = y[:self.topk]       #最小的十个
-            topk_maxs = y[-self.topk:]      #最大的十个
-            if self.index < self.sample_batches:
-                self.minv[self.index, :] = topk_mins
-                self.maxv[self.index, :] = topk_maxs
-                self.index += 1
+            if self.index<256:            #从前256个中提取激活层特征
+                y = x.clone()
+                y = torch.reshape(y, (-1,))     #s
+                y, indices = y.sort()
+                topk_mins = y[:self.topk]       #最小的十个
+                topk_maxs = y[-self.topk:]      #最大的十个
+                if self.index < self.sample_batches:
+                    self.minv[self.index, :] = topk_mins
+                    self.maxv[self.index, :] = topk_maxs
+                    self.index += 1
 #                print('y:{}'.format(y))
 #                print('minv:{},maxv:{}'.format(self.minv,self.maxv))
 #                print('size:{}'.format(self.minv.size()))
