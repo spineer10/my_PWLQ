@@ -67,7 +67,7 @@ def main():
     resnet50.load_state_dict(checkpoint)
     #quntization activations 量化激活层
     resnet50 = quant_model_acts(resnet50,4.0,True,4)
-    validate(test_dataloader,resnet50,critirion)
+    validate(train_dataloader,resnet50,critirion)
 # 定义训练函数
 def train(dataset, dataloader, model, lr, num_epochs=20, device='gpu'):
     loss_fn = nn.CrossEntropyLoss()

@@ -37,7 +37,7 @@ class QuantAct(nn.Module):
 
     def forward(self, x):
         if self.get_stats:                #get_states=1时表示位于激活层的采集模式
-            if self.index<256:            #从前256个中提取激活层特征
+            if self.index<128:            #从前256个中提取激活层特征
                 y = x.clone()
                 y = torch.reshape(y, (-1,))     #s
                 y, indices = y.sort()
@@ -50,7 +50,7 @@ class QuantAct(nn.Module):
             else:
                 self.quant_minv = torch.min(self.minv)
                 self.quant_maxv = torch.max(self.maxv)
-                print("quant acts minv:{},maxv:{}".format(self.quant_minv,self.quant_maxv))
+ #               print("quant acts minv:{},maxv:{}".format(self.quant_minv,self.quant_maxv))
             self.index += 1
         if self.act_bits > 0:
             # uniform quantization
@@ -63,7 +63,7 @@ class QuantAct(nn.Module):
             #         _minv = - self.maxv
             #         self.signed = True
              x = uniform_symmetric_quantizer(x, bits=self.act_bits,
-                     minv=self.quant_minv, maxv=self.quant_maxv, signed=True)
+                     minv=-2, maxv=2, signed=True)
         return x
 
 
